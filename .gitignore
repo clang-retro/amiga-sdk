@@ -8,3 +8,4 @@ __pycache__/
 *.lha
 /build-amigaos/
 /m68k-amigaos/
+/site/
