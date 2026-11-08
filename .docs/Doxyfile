@@ -1,0 +1,9 @@
+# The API reference of the documentation site (api/), run by .docs/hooks.py
+# from the repository's root after `mkdocs build`.
+@INCLUDE               = .docs/Doxyfile.base
+PROJECT_NAME           = "Amiga SDK"
+PROJECT_BRIEF          = "The AmigaOS headers and the link library functions"
+INPUT                  = os/include \
+                         os/alib
+FILE_PATTERNS          = *.h *.c
+OPTIMIZE_OUTPUT_FOR_C  = YES
