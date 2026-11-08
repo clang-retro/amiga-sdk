@@ -1,0 +1,31 @@
+# The documentation site: https://clang-retro.github.io/amiga-sdk/
+# Build it with `pip install -r .docs/requirements.txt` and `mkdocs serve`.
+INHERIT: .docs/base.yml
+site_name: Amiga SDK
+site_description: Classic AmigaOS programs (Kickstart 1.3 to 3.x) with clang
+site_url: https://clang-retro.github.io/amiga-sdk/
+repo_url: https://github.com/clang-retro/amiga-sdk
+repo_name: clang-retro/amiga-sdk
+edit_uri: ""
+hooks:
+  - .docs/hooks.py
+
+extra:
+  retro:
+    github: clang-retro/amiga-sdk
+    branch: main
+    pages:
+      README.md: index.md
+      os/README.md: headers.md
+      CONTRIBUTING.md: contributing.md
+
+nav:
+  - "Home": index.md
+  - "Using the SDK": using.md
+  - "The AmigaOS headers": headers.md
+  - "Building the sysroot": building.md
+  - "Testing": testing.md
+  - "Not done yet": status.md
+  - "Contributing": contributing.md
+  - "License": license.md
+  - "All clang-retro projects": https://clang-retro.github.io/dos-sdk/projects/
