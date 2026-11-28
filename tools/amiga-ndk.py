@@ -2,9 +2,10 @@
 """Install the AmigaOS headers and OS call stubs into the m68k-amigaos sysroot.
 
 The headers and library descriptions come from Hyperion's Native Developer
-Kit for AmigaOS 3.2 (NDK 3.2), which is free to download from Aminet but
-may not be passed on with this SDK. This script downloads it (or takes a
-copy you have), checks it, and installs:
+Kit for AmigaOS 3.2 (NDK 3.2). You can get it free from Aminet, but you
+must not give it to other persons with this SDK. Thus this script does not
+download it. Get your own copy, give it with --archive, and the script
+checks it and installs:
 
   include/        the NDK's C headers, with proto/ headers for clang
   fd/             the NDK's library descriptions (*_lib.fd)
@@ -13,7 +14,7 @@ copy you have), checks it, and installs:
                   expects and calls it through its base in a6, and
                   the amiga.lib helpers of this SDK (os/alib)
 
-    amiga-ndk.py [--sysroot DIR] [--archive NDK3.2.lha] [--bin DIR]
+    amiga-ndk.py --archive NDK3.2.lha [--sysroot DIR] [--bin DIR]
 
 By default the sysroot is m68k-amigaos and the tools are in bin, next to
 the share directory this script is in.
@@ -27,7 +28,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fd2stub  # noqa: E402
@@ -35,29 +35,10 @@ import lha  # noqa: E402
 
 NDK_NAME = "NDK 3.2 Release 4"
 NDK_SHA256 = "96cabd4ad683dced632e147bf86dee0f50dcb1254386216c25c362916a6409bb"
-NDK_URLS = [
-    "https://aminet.net/dev/misc/NDK3.2.lha",
-    "https://de4.aminet.net/dev/misc/NDK3.2.lha",
-    "https://ftp.fau.de/aminet/dev/misc/NDK3.2.lha",
-]
-
-
-def download():
-    errors = []
-    for url in NDK_URLS:
-        try:
-            print("downloading", url)
-            with urllib.request.urlopen(url, timeout=60) as r:
-                data = r.read()
-            if hashlib.sha256(data).hexdigest() == NDK_SHA256:
-                return data
-            errors.append("%s: not the expected file" % url)
-        except OSError as e:
-            errors.append("%s: %s" % (url, e))
-    sys.exit("could not download the NDK:\n  " + "\n  ".join(errors))
 
 
 def find_tool(bindir, name):
+    """Find the tool NAME in BINDIR or on PATH. Stop if it is not there."""
     exe = name + (".exe" if os.name == "nt" else "")
     if bindir:
         path = os.path.join(bindir, exe)
@@ -92,6 +73,7 @@ CLANG_COMPILER_SPECIFIC = b"""
 
 
 def patch_header(rel, body):
+    """Change one NDK header, given by its path REL, for clang."""
     # filetypes.h includes its neighbour as tools/textedit/, which only
     # works on file systems that ignore case.
     if rel == "tools/TextEdit/filetypes.h":
@@ -106,6 +88,7 @@ def patch_header(rel, body):
 
 
 def proto_header(lib, base, btype):
+    """Make the text of the proto/ header for the library LIB."""
     guard = "PROTO_%s_H" % lib.upper()
     return """\
 #ifndef {guard}
@@ -121,11 +104,13 @@ extern {btype} *{base};
 
 
 def main():
+    """Read the arguments, check the NDK archive and install it."""
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(os.path.dirname(here))
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--sysroot", default=os.path.join(root, "m68k-amigaos"))
-    ap.add_argument("--archive", help="NDK3.2.lha you already have")
+    ap.add_argument("--archive", required=True,
+                    help="your copy of NDK3.2.lha (from Aminet)")
     ap.add_argument("--bin", default=os.path.join(root, "bin"),
                     help="directory with clang and llvm-ar")
     ap.add_argument("--no-stubs", action="store_true",
@@ -135,14 +120,11 @@ def main():
     if not args.no_stubs:
         clang = find_tool(args.bin, "clang")
         llvm_ar = find_tool(args.bin, "llvm-ar")
-    if args.archive:
-        with open(args.archive, "rb") as f:
-            data = f.read()
-        if hashlib.sha256(data).hexdigest() != NDK_SHA256:
-            print("warning: %s is not %s from Aminet; installing it anyway"
-                  % (args.archive, NDK_NAME))
-    else:
-        data = download()
+    with open(args.archive, "rb") as f:
+        data = f.read()
+    if hashlib.sha256(data).hexdigest() != NDK_SHA256:
+        print("warning: %s is not %s from Aminet; installing it anyway"
+              % (args.archive, NDK_NAME))
 
     inc = os.path.join(args.sysroot, "include")
     libdir = os.path.join(args.sysroot, "lib")
