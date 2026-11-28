@@ -17,7 +17,8 @@ built with clang from [clang-dos/llvm](https://github.com/clang-dos/llvm)
 Everything here can be redistributed: no file comes from the NDK, which
 is used only to check that the SDK's headers match it.
 `tools/amiga-ndk.py` can still install the NDK's own headers in their
-place, for those who want them.
+place, from a copy of the NDK that you get yourself. It does not download
+the NDK, and CI does not use it.
 
 ## Using it
 
@@ -122,8 +123,8 @@ toolchain package (clang-dos/dos-sdk) runs this script.
   With `SERIAL=/dev/pts/N` the Amiga's serial port goes to that terminal,
   where debug.lib's output appears.
 - `python3 -m unittest discover -s tests` checks the stub generator and
-  the LHA reader; with `AMIGA_SDK_NETWORK=1` it also installs the NDK
-  headers from Aminet.
+  the LHA reader. With `AMIGA_NDK_ARCHIVE=path/to/NDK3.2.lha` (your own
+  copy) it also installs the NDK headers. Nothing is downloaded.
 - `tools/ndk-compare.py` compares the SDK's headers with an NDK you have
   (see [os/README.md](os/README.md)).
 

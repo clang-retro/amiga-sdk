@@ -1,5 +1,6 @@
-"""Checks lha.py on an archive built here, and, with AMIGA_SDK_NETWORK=1,
-installs the NDK headers from Aminet with amiga-ndk.py --no-stubs."""
+"""Checks lha.py on an archive built here. With AMIGA_NDK_ARCHIVE set to
+your own copy of NDK3.2.lha, it also installs the NDK headers with
+amiga-ndk.py --no-stubs. Nothing is downloaded."""
 import os
 import struct
 import subprocess
@@ -31,7 +32,10 @@ def stored_entry(name, data, level):
 
 
 class Lha(unittest.TestCase):
+    """Tests of the LHA reader and the NDK installer."""
+
     def test_stored(self):
+        """Extract stored members with level 0 and level 1 headers."""
         archive = (stored_entry(b"a/one.h", b"one\n", 0)
                    + stored_entry(b"two.fd", b"##base _X\n", 1) + b"\0")
         got = dict(lha.extract(archive))
@@ -40,16 +44,20 @@ class Lha(unittest.TestCase):
         self.assertEqual(list(got), ["two.fd"])
 
     def test_crc(self):
+        """Refuse a member whose data does not match its CRC."""
         bad = bytearray(stored_entry(b"x", b"data", 0) + b"\0")
         bad[-2] ^= 1  # the last data byte
         with self.assertRaises(ValueError):
             list(lha.extract(bytes(bad)))
 
-    @unittest.skipUnless(os.environ.get("AMIGA_SDK_NETWORK"), "needs network")
+    @unittest.skipUnless(os.environ.get("AMIGA_NDK_ARCHIVE"),
+                         "needs AMIGA_NDK_ARCHIVE (your NDK3.2.lha)")
     def test_ndk_headers(self):
+        """Install the NDK headers from your own archive and check them."""
         out = tempfile.mkdtemp()
         subprocess.run([sys.executable, os.path.join(HERE, "..", "tools",
                                                      "amiga-ndk.py"),
+                        "--archive", os.environ["AMIGA_NDK_ARCHIVE"],
                         "--sysroot", out, "--no-stubs"], check=True)
         inc = os.path.join(out, "include")
         with open(os.path.join(inc, "proto", "dos.h")) as f:
